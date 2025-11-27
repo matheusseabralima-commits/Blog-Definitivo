@@ -1,31 +1,36 @@
-version: '3.7'
-
 services:
-  # Serviço 1: O Banco de Dados PostgreSQL
+  web:
+    build: .
+    container_name: meu_projeto_cake-web-1
+    ports:
+      - "8081:80"
+    volumes:
+      # Espelha o código do projeto (Assim seus uploads de imagens ficam salvos na sua máquina)
+      - .:/var/www/html
+      # Monta o ARQUIVO de config do Apache
+      - ./docker/apache/meu-site.conf:/etc/apache2/sites-available/000-default.conf
+    
+    # Comando para corrigir permissões da pasta "tmp" e iniciar o Apache
+    command: bash -c "chown -R www-data:www-data /var/www/html/app/tmp && apache2-foreground"
+    
+    depends_on:
+      - db
+
   db:
     image: postgres:13
-    container_name: blog-postgres-db
-    environment:
-      POSTGRES_USER: cake_user
-      POSTGRES_PASSWORD: minha_senha_forte
-      POSTGRES_DB: cake_blog_db
+    container_name: meu_projeto_cake-db-1
     ports:
-      # Permite que você conecte no banco de fora (ex: com DBeaver)
+      # Expõe a porta do Postgres no seu computador
       - "5433:5432"
+    environment:
+      POSTGRES_DB: cake_blog_db
+      POSTGRES_USER: cake_user
+      POSTGRES_PASSWORD: 1234
     volumes:
+      # --- AQUI ESTÁ A CORREÇÃO PARA SALVAR OS DADOS ---
+      # Mapeia a pasta de dados do container para um volume persistente do Docker
       - postgres_data:/var/lib/postgresql/data
 
-  # Serviço 2: O Servidor Web (PHP + Apache)
-  web:
-    build: . # Constrói a imagem usando o Dockerfile abaixo
-    container_name: blog-web-server
-    ports:
-      - "8081:80" # Acesse seu site em http://localhost:8081
-    volumes:
-      # Monta sua pasta local dentro do contêiner
-      - .:/var/www/html
-    depends_on:
-      - db # Garante que o banco de dados inicie antes
-
+# --- Definição do Volume ---
 volumes:
   postgres_data:

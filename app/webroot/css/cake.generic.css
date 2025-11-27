@@ -1,743 +1,333 @@
-@charset "utf-8";
-/**
- * Generic CSS for CakePHP
- *
- * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
- * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- *
- * Licensed under The MIT License
- * For full copyright and license information, please see the LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @copyright     Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @link          https://cakephp.org CakePHP(tm) Project
- * @package       app.webroot.css
- * @license       https://opensource.org/licenses/mit-license.php MIT License
+/*
+ * CSS Customizado Completo (Corrigido)
  */
 
-* {
-	margin:0;
-	padding:0;
+/* 8. Cor de fundo e Imagem da Página */
+body.bg-light {
+    background-image: url('../img/image.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-color: #1a0b1f;
 }
 
-/** General Style Info **/
-body {
-	background: #003d4c;
-	color: #fff;
-	font-family:'lucida grande',verdana,helvetica,arial,sans-serif;
-	font-size:90%;
-	margin: 0;
-}
-a {
-	color: #003d4c;
-	text-decoration: underline;
-	font-weight: bold;
-}
-a:hover {
-	color: #367889;
-	text-decoration:none;
-}
-a img {
-	border:none;
-}
-h1, h2, h3, h4 {
-	font-weight: normal;
-	margin-bottom:0.5em;
-}
-h1 {
-	background:#fff;
-	color: #003d4c;
-	font-size: 100%;
-}
-h2 {
-	background:#fff;
-	color: #e32;
-	font-family:'Gill Sans','lucida grande', helvetica, arial, sans-serif;
-	font-size: 190%;
-}
-h3 {
-	color: #2c6877;
-	font-family:'Gill Sans','lucida grande', helvetica, arial, sans-serif;
-	font-size: 165%;
-}
-h4 {
-	color: #993;
-	font-weight: normal;
-}
-ul, li {
-	margin: 0 12px;
-}
-p {
-	margin: 0 0 1em 0;
+/* 1. Header (Faixa Superior) */
+.navbar-black {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    background-color: rgba(26, 11, 31, 0.85); 
+    border-bottom: 1px solid rgba(74, 42, 85, 0.5); 
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
-/** Layout **/
-#container {
-	text-align: left;
+/* 2. Sidebar (Menu Lateral) */
+.sidebar-dark-bg {
+    background-color: rgba(26, 11, 31, 0.85); 
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-right: 1px solid rgba(74, 42, 85, 0.5);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    padding-top: 56px;
 }
 
-#header{
-	padding: 10px 20px;
-}
-#header h1 {
-	line-height:20px;
-	background: #003d4c url('../img/cake.icon.png') no-repeat left;
-	color: #fff;
-	padding: 0 30px;
-}
-#header h1 a {
-	color: #fff;
-	background: #003d4c;
-	font-weight: normal;
-	text-decoration: none;
-}
-#header h1 a:hover {
-	color: #fff;
-	background: #003d4c;
-	text-decoration: underline;
-}
-#content{
-	background: #fff;
-	clear: both;
-	color: #333;
-	padding: 10px 20px 40px 20px;
-	overflow: auto;
-}
-#footer {
-	clear: both;
-	padding: 6px 10px;
-}
-#header a, #footer a {
-	color: #fff;
-}
-#cake-powered {
-	float: right;
+/* 3. Ajustes de altura e responsivo */
+@media (min-width: 768px) {
+    main.col-md-9 {
+        padding-top: 4.5rem !important; 
+    }
 }
 
-/** containers **/
-div.form,
-div.index,
-div.view {
-	float:right;
-	width:76%;
-	border-left:1px solid #666;
-	padding:10px 2%;
-}
-div.actions {
-	float:left;
-	width:16%;
-	padding:10px 1.5%;
-}
-div.actions h3 {
-	padding-top:0;
-	color:#777;
-}
-
-
-/** Tables **/
+/* 4. Estilo da Tabela (MANTIDO PARA COMPATIBILIDADE) */
 table {
-	border-right:0;
-	clear: both;
-	color: #333;
-	margin-bottom: 10px;
-	width: 100%;
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #343a40;
+    background-color: #fff;
+    border-collapse: collapse;
+    border: 1px solid #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
 }
-th {
-	border:0;
-	border-bottom:2px solid #555;
-	text-align: left;
-	padding:4px;
+table th, table td {
+    padding: 0.9rem;
+    vertical-align: middle;
+    border-top: 1px solid #1a1a1a;
 }
-th a {
-	display: block;
-	padding: 2px 4px;
-	text-decoration: none;
+table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #1a1a1a;
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #212529;
 }
-th a.asc:after {
-	content: ' ⇣';
+table tbody tr:nth-of-type(odd) { background-color: rgba(0, 0, 0, 0.03); }
+table tbody tr:hover { background-color: rgba(0, 0, 0, 0.06); }
+
+/* 5. Estilos dos Links da Sidebar */
+.sidebar-dark-bg .nav-link {
+    color: #d1b8de;
+    padding: 0.6rem 1rem;
+    margin-bottom: 4px;
+    border-radius: 5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
 }
-th a.desc:after {
-	content: ' ⇡';
+.sidebar-dark-bg .nav-link:hover {
+    color: #fff;
+    background-color: rgba(94, 53, 115, 0.4);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
-table tr td {
-	padding: 6px;
-	text-align: left;
-	vertical-align: top;
-	border-bottom:1px solid #ddd;
-}
-table tr:nth-child(even) {
-	background: #f9f9f9;
-}
-td.actions {
-	text-align: center;
-	white-space: nowrap;
-}
-table td.actions a {
-	margin: 0 6px;
-	padding:2px 5px;
+.sidebar-dark-bg .nav-link.active {
+    background-color: #5e3573;
+    color: #fff;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* SQL log */
-.cake-sql-log {
-	background: #fff;
-}
-.cake-sql-log td {
-	padding: 4px 8px;
-	text-align: left;
-	font-family: Monaco, Consolas, "Courier New", monospaced;
-}
-.cake-sql-log caption {
-	color:#fff;
+/* 6. Divisor da Sidebar */
+hr.sidebar-divider {
+    margin: 0 1rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/** Paging **/
-.paging {
-	background:#fff;
-	color: #ccc;
-	margin-top: 1em;
-	clear:both;
-}
-.paging .current,
-.paging .disabled,
-.paging a {
-	text-decoration: none;
-	padding: 5px 8px;
-	display: inline-block
-}
-.paging > span {
-	display: inline-block;
-	border: 1px solid #ccc;
-	border-left: 0;
-}
-.paging > span:hover {
-	background: #efefef;
-}
-.paging .prev {
-	border-left: 1px solid #ccc;
-	-moz-border-radius: 4px 0 0 4px;
-	-webkit-border-radius: 4px 0 0 4px;
-	border-radius: 4px 0 0 4px;
-}
-.paging .next {
-	-moz-border-radius: 0 4px 4px 0;
-	-webkit-border-radius: 0 4px 4px 0;
-	border-radius: 0 4px 4px 0;
-}
-.paging .disabled {
-	color: #ddd;
-}
-.paging .disabled:hover {
-	background: transparent;
-}
-.paging .current {
-	background: #efefef;
-	color: #c73e14;
+/* 7. Flash Messages (CORRIGIDO E FORÇADO) 
+   Usamos !important para garantir que o estilo responsivo não esconda as cores
+*/
+#flashMessage, .message, .alert {
+    padding: 15px 20px;
+    margin: 10px 0 20px 0;
+    border-radius: 4px;
+    font-weight: bold;
+    border: 1px solid transparent;
 }
 
-/** Scaffold View **/
-dl {
-	line-height: 2em;
-	margin: 0em 0em;
-	width: 60%;
-}
-dl dd:nth-child(4n+2),
-dl dt:nth-child(4n+1) {
-	background: #f4f4f4;
+/* SUCESSO (Verde) - Cobre CakePHP (.message.success) e Bootstrap (.alert-success) */
+.message.success, .alert-success, .success { 
+    color: #155724 !important; 
+    background-color: #d4edda !important; 
+    border-color: #c3e6cb !important; 
 }
 
-dt {
-	font-weight: bold;
-	padding-left: 4px;
-	vertical-align: top;
-	width: 10em;
-}
-dd {
-	margin-left: 10em;
-	margin-top: -2em;
-	vertical-align: top;
+/* ERRO (Vermelho) - Cobre CakePHP (.message.error) e Bootstrap (.alert-danger) */
+.message.error, .alert-danger, .error, .authError { 
+    color: #721c24 !important; 
+    background-color: #f8d7da !important; 
+    border-color: #f5c6cb !important; 
 }
 
-/** Forms **/
-form {
-	clear: both;
-	margin-right: 20px;
-	padding: 0;
-	width: 95%;
-}
-fieldset {
-	border: none;
-	margin-bottom: 1em;
-	padding: 16px 10px;
-}
-fieldset legend {
-	color: #e32;
-	font-size: 160%;
-	font-weight: bold;
-}
-fieldset fieldset {
-	margin-top: 0;
-	padding: 10px 0 0;
-}
-fieldset fieldset legend {
-	font-size: 120%;
-	font-weight: normal;
-}
-fieldset fieldset div {
-	clear: left;
-	margin: 0 20px;
-}
-form div {
-	clear: both;
-	margin-bottom: 1em;
-	padding: .5em;
-	vertical-align: text-top;
-}
-form .input {
-	color: #444;
-}
-form .required {
-	font-weight: bold;
-}
-form .required label:after {
-	color: #e32;
-	content: '*';
-	display:inline;
-}
-form div.submit {
-	border: 0;
-	clear: both;
-	margin-top: 10px;
-}
-label {
-	display: block;
-	font-size: 110%;
-	margin-bottom:3px;
-}
-input, textarea {
-	clear: both;
-	font-size: 140%;
-	font-family: "frutiger linotype", "lucida grande", "verdana", sans-serif;
-	padding: 1%;
-	width:98%;
-}
-select {
-	clear: both;
-	font-size: 120%;
-	vertical-align: text-bottom;
-}
-select[multiple=multiple] {
-	width: 100%;
-}
-option {
-	font-size: 120%;
-	padding: 0 3px;
-}
-input[type=checkbox] {
-	clear: left;
-	float: left;
-	margin: 0 6px 7px 2px;
-	width: auto;
-}
-div.checkbox label {
-	display: inline;
-}
-input[type=radio] {
-	float:left;
-	width:auto;
-	margin: 6px 0;
-	padding: 0;
-	line-height: 26px;
-}
-.radio label {
-	margin: 0 0 6px 20px;
-	line-height: 26px;
-}
-input[type=submit] {
-	display: inline;
-	font-size: 110%;
-	width: auto;
-}
-form .submit input[type=submit] {
-	background:#62af56;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#76BF6B), to(#3B8230));
-	background-image: -webkit-linear-gradient(top, #76BF6B, #3B8230);
-	background-image: -moz-linear-gradient(top, #76BF6B, #3B8230);
-	border-color: #2d6324;
-	color: #fff;
-	text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
-	padding: 8px 10px;
-}
-form .submit input[type=submit]:hover {
-	background: #5BA150;
-}
-/* Form errors */
-form .error {
-	background: #FFDACC;
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
-	border-radius: 4px;
-	font-weight: normal;
-}
-form .error-message {
-	-moz-border-radius: none;
-	-webkit-border-radius: none;
-	border-radius: none;
-	border: none;
-	background: none;
-	margin: 0;
-	padding-left: 4px;
-	padding-right: 0;
-}
-form .error,
-form .error-message {
-	color: #9E2424;
-	-webkit-box-shadow: none;
-	-moz-box-shadow: none;
-	-ms-box-shadow: none;
-	-o-box-shadow: none;
-	box-shadow: none;
-	text-shadow: none;
+/* INFO (Azul) */
+.message.info, .alert-info { 
+    color: #0c5460 !important; 
+    background-color: #d1ecf1 !important; 
+    border-color: #bee5eb !important; 
 }
 
-/** Notices and Errors **/
-.message {
-	clear: both;
-	color: #fff;
-	font-size: 140%;
-	font-weight: bold;
-	margin: 0 0 1em 0;
-	padding: 5px;
+
+/* --- NOVO: ESTILOS PARA OS CARDS (GRID) --- */
+.user-card {
+    background-color: #fff;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    height: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.success,
-.message,
-.cake-error,
-.cake-debug,
-.notice,
-p.error,
-.error-message {
-	background: #ffcc00;
-	background-repeat: repeat-x;
-	background-image: -moz-linear-gradient(top, #ffcc00, #E6B800);
-	background-image: -ms-linear-gradient(top, #ffcc00, #E6B800);
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#ffcc00), to(#E6B800));
-	background-image: -webkit-linear-gradient(top, #ffcc00, #E6B800);
-	background-image: -o-linear-gradient(top, #ffcc00, #E6B800);
-	background-image: linear-gradient(top, #ffcc00, #E6B800);
-	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-	border: 1px solid rgba(0, 0, 0, 0.2);
-	margin-bottom: 18px;
-	padding: 7px 14px;
-	color: #404040;
-	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-	-webkit-border-radius: 4px;
-	-moz-border-radius: 4px;
-	border-radius: 4px;
-	-webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-	-moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-.success,
-.message,
-.cake-error,
-p.error,
-.error-message {
-	clear: both;
-	color: #fff;
-	background: #c43c35;
-	border: 1px solid rgba(0, 0, 0, 0.5);
-	background-repeat: repeat-x;
-	background-image: -moz-linear-gradient(top, #ee5f5b, #c43c35);
-	background-image: -ms-linear-gradient(top, #ee5f5b, #c43c35);
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#ee5f5b), to(#c43c35));
-	background-image: -webkit-linear-gradient(top, #ee5f5b, #c43c35);
-	background-image: -o-linear-gradient(top, #ee5f5b, #c43c35);
-	background-image: linear-gradient(top, #ee5f5b, #c43c35);
-	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
-}
-.success {
-	clear: both;
-	color: #fff;
-	border: 1px solid rgba(0, 0, 0, 0.5);
-	background: #3B8230;
-	background-repeat: repeat-x;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#76BF6B), to(#3B8230));
-	background-image: -webkit-linear-gradient(top, #76BF6B, #3B8230);
-	background-image: -moz-linear-gradient(top, #76BF6B, #3B8230);
-	background-image: -ms-linear-gradient(top, #76BF6B, #3B8230);
-	background-image: -o-linear-gradient(top, #76BF6B, #3B8230);
-	background-image: linear-gradient(top, #76BF6B, #3B8230);
-	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
-}
-p.error {
-	font-family: Monaco, Consolas, Courier, monospace;
-	font-size: 120%;
-	padding: 0.8em;
-	margin: 1em 0;
-}
-p.error em {
-	font-weight: normal;
-	line-height: 140%;
-}
-.notice {
-	color: #000;
-	display: block;
-	font-size: 120%;
-	padding: 0.8em;
-	margin: 1em 0;
-}
-.success {
-	color: #fff;
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #f0f2f5;
+    color: #5e3573;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    border: 2px solid #e9ecef;
 }
 
-/**  Actions  **/
-.actions ul {
-	margin: 0;
-	padding: 0;
+.badge-role {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background-color: #e9ecef;
+    color: #495057;
 }
-.actions li {
-	margin:0 0 0.5em 0;
-	list-style-type: none;
-	white-space: nowrap;
-	padding: 0;
+.badge-role.admin {
+    background-color: #cfe2ff;
+    color: #084298;
 }
-.actions ul li a {
-	font-weight: normal;
-	display: block;
-	clear: both;
+/* --- CSS para a Página de Login Moderna --- */
+
+/* 1. Container que cobre a tela inteira e centraliza o conteúdo */
+.login-page-container {
+    min-height: 100vh; /* Altura total da tela */
+    display: flex;
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente */
+    padding: 20px;
+    /* Mantém o seu fundo atual, mas escurece um pouco para dar destaque ao card */
+    background: linear-gradient(rgba(44, 27, 49, 0.8), rgba(44, 27, 49, 0.8)), url('../img/seu-fundo-floresta.jpg') no-repeat center center fixed;
+    background-size: cover;
 }
 
-/* Buttons and button links */
-input[type=submit],
-.actions ul li a,
-.actions a {
-	font-weight:normal;
-	padding: 4px 8px;
-	background: #dcdcdc;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#fefefe), to(#dcdcdc));
-	background-image: -webkit-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -moz-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -ms-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -o-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: linear-gradient(top, #fefefe, #dcdcdc);
-	color:#333;
-	border:1px solid #bbb;
-	-webkit-border-radius: 4px;
-	-moz-border-radius: 4px;
-	border-radius: 4px;
-	text-decoration: none;
-	text-shadow: #fff 0 1px 0;
-	min-width: 0;
-	-moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
-	-webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
-	-webkit-user-select: none;
-	user-select: none;
-}
-.actions ul li a:hover,
-.actions a:hover {
-	background: #ededed;
-	border-color: #acacac;
-	text-decoration: none;
-}
-input[type=submit]:active,
-.actions ul li a:active,
-.actions a:active {
-	background: #eee;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#dfdfdf), to(#eee));
-	background-image: -webkit-linear-gradient(top, #dfdfdf, #eee);
-	background-image: -moz-linear-gradient(top, #dfdfdf, #eee);
-	background-image: -ms-linear-gradient(top, #dfdfdf, #eee);
-	background-image: -o-linear-gradient(top, #dfdfdf, #eee);
-	background-image: linear-gradient(top, #dfdfdf, #eee);
-	text-shadow: #eee 0 1px 0;
-	-moz-box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
-	-webkit-box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
-	box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
-	border-color: #aaa;
-	text-decoration: none;
+/* 2. O "Card" de Login */
+.login-card {
+    background-color: #fff;
+    width: 100%;
+    max-width: 450px; /* Largura máxima para não ficar gigante em telas grandes */
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); /* Sombra suave para destacar */
+    overflow: hidden; /* Garante que o cabeçalho roxo respeite a borda arredondada */
 }
 
-/** Related **/
-.related {
-	clear: both;
-	display: block;
+/* 3. Cabeçalho Roxo do Card */
+.login-card-header {
+    background-color: #38223e; /* Sua cor roxa aproximada da sidebar */
+    color: rgb(105, 50, 255);
+    padding: 25px 20px;
+    text-align: center;
+}
+.login-card-header h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
 }
 
-/** Debugging **/
-pre {
-	color: #000;
-	background: #f0f0f0;
-	padding: 15px;
-	-moz-box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-	-webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-	box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-.cake-debug-output {
-	padding: 0;
-	position: relative;
-}
-.cake-debug-output > span {
-	position: absolute;
-	top: 5px;
-	right: 5px;
-	background: rgba(255, 255, 255, 0.3);
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
-	border-radius: 4px;
-	padding: 5px 6px;
-	color: #000;
-	display: block;
-	float: left;
-	-moz-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.5);
-	-webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.5);
-	box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.5);
-	text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
-}
-.cake-debug,
-.cake-error {
-	font-size: 16px;
-	line-height: 20px;
-	clear: both;
-}
-.cake-error > a {
-	text-shadow: none;
-}
-.cake-error {
-	white-space: normal;
-}
-.cake-stack-trace {
-	background: rgba(255, 255, 255, 0.7);
-	color: #333;
-	margin: 10px 0 5px 0;
-	padding: 10px 10px 0 10px;
-	font-size: 120%;
-	line-height: 140%;
-	overflow: auto;
-	position: relative;
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
-	border-radius: 4px;
-}
-.cake-stack-trace a {
-	text-shadow: none;
-	background: rgba(255, 255, 255, 0.7);
-	padding: 5px;
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
-	border-radius: 10px;
-	margin: 0 4px 10px 2px;
-	font-family: sans-serif;
-	font-size: 14px;
-	line-height: 14px;
-	display: inline-block;
-	text-decoration: none;
-	-moz-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3);
-	-webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3);
-	box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3);
-}
-.cake-code-dump pre {
-	position: relative;
-	overflow: auto;
-}
-.cake-context {
-	margin-bottom: 10px;
-}
-.cake-stack-trace pre {
-	color: #000;
-	background-color: #F0F0F0;
-	margin: 0 0 10px 0;
-	padding: 1em;
-	overflow: auto;
-	text-shadow: none;
-}
-.cake-stack-trace li {
-	padding: 10px 5px 0;
-	margin: 0 0 4px 0;
-	font-family: monospace;
-	border: 1px solid #bbb;
-	-moz-border-radius: 4px;
-	-wekbkit-border-radius: 4px;
-	border-radius: 4px;
-	background: #dcdcdc;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#fefefe), to(#dcdcdc));
-	background-image: -webkit-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -moz-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -ms-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: -o-linear-gradient(top, #fefefe, #dcdcdc);
-	background-image: linear-gradient(top, #fefefe, #dcdcdc);
-}
-/* excerpt */
-.cake-code-dump pre,
-.cake-code-dump pre code {
-	clear: both;
-	font-size: 12px;
-	line-height: 15px;
-	margin: 4px 2px;
-	padding: 4px;
-	overflow: auto;
-}
-.cake-code-dump .code-highlight {
-	display: block;
-	background-color: rgba(255, 255, 0, 0.5);
-}
-.code-coverage-results div.code-line {
-	padding-left:5px;
-	display:block;
-	margin-left:10px;
-}
-.code-coverage-results div.uncovered span.content {
-	background:#ecc;
-}
-.code-coverage-results div.covered span.content {
-	background:#cec;
-}
-.code-coverage-results div.ignored span.content {
-	color:#aaa;
-}
-.code-coverage-results span.line-num {
-	color:#666;
-	display:block;
-	float:left;
-	width:20px;
-	text-align:right;
-	margin-right:5px;
-}
-.code-coverage-results span.line-num strong {
-	color:#666;
-}
-.code-coverage-results div.start {
-	border:1px solid #aaa;
-	border-width:1px 1px 0 1px;
-	margin-top:30px;
-	padding-top:5px;
-}
-.code-coverage-results div.end {
-	border:1px solid #aaa;
-	border-width:0px 1px 1px 1px;
-	margin-bottom:30px;
-	padding-bottom:5px;
-}
-.code-coverage-results div.realstart {
-	margin-top:0px;
-}
-.code-coverage-results p.note {
-	color:#bbb;
-	padding:5px;
-	margin:5px 0 10px;
-	font-size:10px;
-}
-.code-coverage-results span.result-bad {
-	color: #a00;
-}
-.code-coverage-results span.result-ok {
-	color: #fa0;
-}
-.code-coverage-results span.result-good {
-	color: #0a0;
+/* 4. Corpo do Card (onde fica o formulário) */
+.login-card-body {
+    padding: 30px 25px;
 }
 
-/** Elements **/
-#url-rewriting-warning {
-	display:none;
+/* 5. Ajustes nos Inputs do Formulário (Aproveitando Bootstrap se disponível) */
+.login-card .form-group {
+    margin-bottom: 20px;
+}
+.login-card label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    display: block;
+}
+.login-card .form-control {
+    height: 45px; /* Inputs mais altos e fáceis de tocar no mobile */
+    border-radius: 5px;
+    border: 1px solid #9800f0;
+    padding: 10px 15px;
+    width: 100%;
+    box-sizing: border-box; /* Importante para o padding não quebrar a largura */
+}
+.login-card .form-control:focus {
+    border-color: #38223e; /* Foco roxo */
+    box-shadow: 0 0 0 0.2rem rgba(56, 34, 62, 0.25);
+}
+
+/* 6. Botão de Entrar */
+.btn-login {
+    width: 50%; /* Botão largura total */
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    /* Se você usa Bootstrap, pode usar btn-primary, senão, use sua cor azul */
+    background-color: #5900fd; 
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.btn-login:hover {
+    background-color: #5900ff; /* Azul um pouco mais escuro no hover */
+}
+
+/* 7. Links extras (Registrar) */
+.login-links {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+.login-links a {
+    color: #38223e;
+    text-decoration: none;
+}
+.login-links a:hover {
+    text-decoration: underline;
+}
+
+/* --- IMPORTANTE: Esconder a Sidebar na página de Login --- */
+/* Você precisará verificar no seu layout padrão como identificar a página de login para aplicar isso.
+   Uma forma comum é adicionar uma classe específica ao <body> quando estiver no login.
+   Exemplo: Se o body tiver a classe 'login-layout' */
+body.login-layout .seu-menu-lateral-sidebar {
+    display: none !important;
+}
+/* Se não conseguir adicionar a classe no body, você pode tentar "forçar" no CSS se souber o ID/Classe da sidebar */
+#sidebar { /* Substitua pelo ID real da sua sidebar */
+     display: none; 
+}
+.login-page-container ~ #sidebar { display: none; } /* Tenta esconder se estiver no mesmo nível */
+/* --- ANIMAÇÕES DE TRANSIÇÃO --- */
+
+/* Configuração base da animação */
+.animate-entry {
+    animation-duration: 0.6s;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); /* Movimento suave e moderno */
+}
+
+/* 1. Efeito Slide Up (Surgir de baixo) - Bom para o Login */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(40px); /* Começa 40px abaixo */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.slide-up {
+    animation-name: slideUpFade;
+}
+
+/* 2. Efeito Slide Left (Vindo da direita) - Bom para o Registrar (Ideia de Avançar) */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px); /* Começa 40px à direita */
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+.slide-in-right {
+    animation-name: slideInRight;
+}
+
+/* 3. Efeito Slide Right (Vindo da esquerda) - Bom para voltar ao Login */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px); /* Começa 40px à esquerda */
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+.slide-in-left {
+    animation-name: slideInLeft;
 }

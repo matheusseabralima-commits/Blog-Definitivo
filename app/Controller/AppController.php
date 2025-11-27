@@ -1,34 +1,40 @@
 <?php
-/**
- * Application level Controller
- *
- * This file is application-wide controller file. You can put all
- * application-wide controller-related methods here.
- *
- * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
- * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- *
- * Licensed under The MIT License
- * For full copyright and license information, please see the LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @copyright     Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @link          https://cakephp.org CakePHP(tm) Project
- * @package       app.Controller
- * @since         CakePHP(tm) v 0.2.9
- * @license       https://opensource.org/licenses/mit-license.php MIT License
- */
-
 App::uses('Controller', 'Controller');
+// A nossa correção do "bug do inferno" (Plano B) está no UsersController e User Model,
+// por isso este ficheiro pode ficar limpo.
 
-/**
- * Application Controller
- *
- * Add your application-wide methods in the class below, your controllers
- * will inherit them.
- *
- * @package		app.Controller
- * @link		https://book.cakephp.org/2.0/en/controllers.html#the-app-controller
- */
 class AppController extends Controller {
+    
+    // Carrega os componentes para TODOS os controllers
+    public $components = array(
+        'Flash',
+        'Session',
+        'Auth' => array(
+            'loginRedirect' => array('controller' => 'posts', 'action' => 'index'),
+            'logoutRedirect' => array('controller' => 'users', 'action' => 'login'), // Manda para o login
+            'loginAction' => array('controller' => 'users', 'action' => 'login'),
+            'authenticate' => array(
+                'Form' => array(
+                    // Usa o 'Plano B' (sha1) que já configurámos no UsersController
+                    'fields' => array('username' => 'username', 'password' => 'password')
+                )
+            ),
+            'authorize' => array('Controller') // Ativa a autorização
+        )
+    );
+
+    // Função 'isAuthorized' genérica (pai)
+    public function isAuthorized($user) {
+        // Por defeito, nega o acesso
+        return false;
+    }
+
+    // Corre ANTES de CADA controller
+    public function beforeFilter() {
+        // Permite que 'index' e 'view' dos Posts sejam vistos por todos (requisito do PDF)
+        $this->Auth->allow('index', 'view');
+
+        // Passa o utilizador logado para TODAS as views (requisito do PDF)
+        $this->set('loggedInUser', $this->Auth->user());
+    }
 }

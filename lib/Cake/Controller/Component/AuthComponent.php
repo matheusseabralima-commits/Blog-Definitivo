@@ -1,4 +1,5 @@
 <?php
+App::uses('SimplePasswordHasher', 'Controller/Component/Auth');
 /**
  * Authentication component
  *
