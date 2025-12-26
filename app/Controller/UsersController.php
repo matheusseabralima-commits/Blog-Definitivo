@@ -92,6 +92,7 @@ class UsersController extends AppController {
      * INDEX: Listagem de usuários
      */
     public function index() {
+        // Define a recursão para coloacfar o usuáriom e os dadoas necessários da tabela
         $this->User->recursive = 0;
         
         try {
@@ -184,7 +185,7 @@ class UsersController extends AppController {
                 }
             }
 
-            // Remove a senha do array se estiver vazia (para não salvar senha em branco)
+            // Remove a senha do array se estiver vazia (para não salvar senha em branco), mantendo a senha antiga
             if (empty($formData['User']['password'])) {
                 unset($formData['User']['password']);
             }
@@ -208,15 +209,16 @@ class UsersController extends AppController {
         }
     }
     
-    /*
-     * DELETE: Exclusão de usuário com regras de segurança
-     */
+     // --- LÓGICA DE SOFT DELETE (Desativar) ---
     public function delete($id = null) {
+        // Verifica se a requisição é POST (segurança)
         if (!$this->request->is('post')) {
             throw new MethodNotAllowedException();
         }
 
         $this->User->id = $id;
+        
+        // Verifica se o usuário existe no banco
         if (!$this->User->exists()) {
             $this->Flash->error(__('Usuário inválido.'));
             return $this->redirect(array('action' => 'index'));
@@ -225,24 +227,48 @@ class UsersController extends AppController {
         $adminLogado = $this->Auth->user();
         $userToDelete = $this->User->findById($id);
 
-        // REGRA: Admin não pode se deletar
+        // REGRA 1: Admin não pode se desativar (segurança para não trancar o sistema)
         if ($adminLogado['id'] == $id) {
-             $this->Flash->error('AÇÃO PROIBIDA: Você não pode deletar sua própria conta.');
+             $this->Flash->error('AÇÃO PROIBIDA: Você não pode desativar sua própria conta.');
              return $this->redirect(array('action' => 'index'));
         }
 
-        // REGRA: Admin não pode deletar outro Admin
+        // REGRA 2: Admin não pode desativar outro Admin (hierarquia)
         if ($userToDelete['User']['role'] === 'admin') {
-            $this->Flash->error('AÇÃO PROIBIDA: Você não pode excluir outro usuário Administrador.');
+            $this->Flash->error('AÇÃO PROIBIDA: Você não pode desativar outro usuário Administrador.');
             return $this->redirect(array('action' => 'index'));
         }
         
-        if ($this->User->delete()) {
-            $this->Flash->success(__('Usuário excluído com sucesso!'));
+        // MUDANÇA: Update 'active' para 0 em vez de deletar
+        if ($this->User->saveField('active', 0)) {
+            $this->Flash->success(__('Usuário desativado com sucesso. (Ele permanece no banco de dados)'));
         } else {
-            $this->Flash->error(__('O usuário não pôde ser excluído.'));
+            $this->Flash->error(__('O usuário não pôde ser desativado.'));
         }
         
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    // --- NOVA FUNÇÃO: REATIVAR USUÁRIO ---
+    public function activate($id = null) {
+        if (!$this->request->is('post')) {
+            throw new MethodNotAllowedException();
+        }
+
+        $this->User->id = $id;
+
+        if (!$this->User->exists()) {
+            $this->Flash->error(__('Usuário inválido.'));
+            return $this->redirect(array('action' => 'index'));
+        }
+
+        // Reativa o usuário setando 'active' para 1
+        if ($this->User->saveField('active', 1)) {
+            $this->Flash->success(__('Usuário reativado com sucesso! Agora ele pode fazer login novamente.'));
+        } else {
+            $this->Flash->error(__('Não foi possível reativar o usuário.'));
+        }
+
         return $this->redirect(array('action' => 'index'));
     }
 }
