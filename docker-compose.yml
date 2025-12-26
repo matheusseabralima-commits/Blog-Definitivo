@@ -3,34 +3,35 @@ services:
     build: .
     container_name: meu_projeto_cake-web-1
     ports:
-      - "8081:80"
+      - "8078:80"
     volumes:
-      # Espelha o código do projeto (Assim seus uploads de imagens ficam salvos na sua máquina)
       - .:/var/www/html
-      # Monta o ARQUIVO de config do Apache
-      - ./docker/apache/meu-site.conf:/etc/apache2/sites-available/000-default.conf
-    
-    # Comando para corrigir permissões da pasta "tmp" e iniciar o Apache
+      # Se você tiver o arquivo de conf do apache, mantenha essa linha. 
+      # Se der erro de arquivo não encontrado, remova a linha abaixo.
+      #- ./docker/apache/meu-site.conf:/etc/apache2/sites-available/000-default.conf
     command: bash -c "chown -R www-data:www-data /var/www/html/app/tmp && apache2-foreground"
-    
     depends_on:
       - db
+    networks:
+      - cake_net
 
   db:
     image: postgres:13
     container_name: meu_projeto_cake-db-1
     ports:
-      # Expõe a porta do Postgres no seu computador
-      - "5433:5432"
+      - "5423:5432"
     environment:
-      POSTGRES_DB: cake_blog_db
+      POSTGRES_DB: meu_projeto_cake_db
       POSTGRES_USER: cake_user
       POSTGRES_PASSWORD: 1234
     volumes:
-      # --- AQUI ESTÁ A CORREÇÃO PARA SALVAR OS DADOS ---
-      # Mapeia a pasta de dados do container para um volume persistente do Docker
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cake_net
 
-# --- Definição do Volume ---
 volumes:
   postgres_data:
+
+networks:
+  cake_net:
+    driver: bridge

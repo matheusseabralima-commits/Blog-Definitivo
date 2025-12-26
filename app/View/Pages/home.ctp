@@ -1,230 +1,193 @@
 <?php
 /**
- * @link          https://cakephp.org CakePHP(tm) Project
- * @package       app.View.Pages
- * @since         CakePHP(tm) v 0.10.0.1076
+ * Dashboard CakePHP com Animação WebGL
  */
-
-if (!Configure::read('debug')):
-	throw new NotFoundException();
-endif;
-
-App::uses('Debugger', 'Utility');
+$this->layout = false; // Desativa o layout padrão do Cake para usarmos tela cheia
 ?>
-<h2><?php echo __d('cake_dev', 'Release Notes for CakePHP %s.', Configure::version()); ?></h2>
-<p>
-	<?php echo $this->Html->link(__d('cake_dev', 'Read the changelog'), 'https://cakephp.org/changelogs/' . Configure::version()); ?>
-</p>
-<?php
-if (Configure::read('debug') > 0):
-	Debugger::checkSecurityKeys();
-endif;
-?>
-<?php if (file_exists(WWW_ROOT . 'css' . DS . 'cake.generic.css')): ?>
-	<p id="url-rewriting-warning" style="background-color:#e32; color:#fff;">
-		<?php echo __d('cake_dev', 'URL rewriting is not properly configured on your server.'); ?>
-		1) <a target="_blank" href="https://book.cakephp.org/2.0/en/installation/url-rewriting.html" style="color:#fff;">Help me configure it</a>
-		2) <a target="_blank" href="https://book.cakephp.org/2.0/en/development/configuration.html#cakephp-core-configuration" style="color:#fff;">I don't / can't use URL rewriting</a>
-	</p>
-<?php endif; ?>
-<p>
-<?php
-if (version_compare(PHP_VERSION, '5.2.8', '>=')):
-	echo '<span class="notice success">';
-		echo __d('cake_dev', 'Your version of PHP is 5.2.8 or higher.');
-	echo '</span>';
-else:
-	echo '<span class="notice">';
-		echo __d('cake_dev', 'Your version of PHP is too low. You need PHP 5.2.8 or higher to use CakePHP.');
-	echo '</span>';
-endif;
-?>
-</p>
-<p>
-	<?php
-	if (is_writable(TMP)):
-		echo '<span class="notice success">';
-			echo __d('cake_dev', 'Your tmp directory is writable.');
-		echo '</span>';
-	else:
-		echo '<span class="notice">';
-			echo __d('cake_dev', 'Your tmp directory is NOT writable.');
-		echo '</span>';
-	endif;
-	?>
-</p>
-<p>
-	<?php
-	$settings = Cache::settings();
-	if (!empty($settings)):
-		echo '<span class="notice success">';
-			echo __d('cake_dev', 'The %s is being used for core caching. To change the config edit %s', '<em>' . $settings['engine'] . 'Engine</em>', CONFIG . 'core.php');
-		echo '</span>';
-	else:
-		echo '<span class="notice">';
-			echo __d('cake_dev', 'Your cache is NOT working. Please check the settings in %s', CONFIG . 'core.php');
-		echo '</span>';
-	endif;
-	?>
-</p>
-<p>
-	<?php
-	$filePresent = null;
-	if (file_exists(CONFIG . 'database.php')):
-		echo '<span class="notice success">';
-			echo __d('cake_dev', 'Your database configuration file is present.');
-			$filePresent = true;
-		echo '</span>';
-	else:
-		echo '<span class="notice">';
-			echo __d('cake_dev', 'Your database configuration file is NOT present.');
-			echo '<br/>';
-			echo __d('cake_dev', 'Rename %s to %s', CONFIG . 'database.php.default', CONFIG . 'database.php');
-		echo '</span>';
-	endif;
-	?>
-</p>
-<?php
-if (isset($filePresent)):
-	App::uses('ConnectionManager', 'Model');
-	try {
-		$connected = ConnectionManager::getDataSource('default');
-	} catch (Exception $connectionError) {
-		$connected = false;
-		$errorMsg = $connectionError->getMessage();
-		if (method_exists($connectionError, 'getAttributes')):
-			$attributes = $connectionError->getAttributes();
-			if (isset($attributes['message'])):
-				$errorMsg .= '<br />' . $attributes['message'];
-			endif;
-		endif;
-	}
-	?>
-	<p>
-		<?php
-			if ($connected && $connected->isConnected()):
-				echo '<span class="notice success">';
-					echo __d('cake_dev', 'CakePHP is able to connect to the database.');
-				echo '</span>';
-			else:
-				echo '<span class="notice">';
-					echo __d('cake_dev', 'CakePHP is NOT able to connect to the database.');
-					echo '<br /><br />';
-					echo $errorMsg;
-				echo '</span>';
-			endif;
-		?>
-	</p>
-<?php
-endif;
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Vendas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .glass-panel { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="font-sans text-white">
 
-App::uses('Validation', 'Utility');
-if (!Validation::alphaNumeric('cakephp')):
-	echo '<p><span class="notice">';
-		echo __d('cake_dev', 'PCRE has not been compiled with Unicode support.');
-		echo '<br/>';
-		echo __d('cake_dev', 'Recompile PCRE with Unicode support by adding <code>--enable-unicode-properties</code> when configuring');
-	echo '</span></p>';
-endif;
-?>
+    <div id="canvas-container"></div>
+    
+    <div class="absolute inset-0 bg-black/60 z-0 pointer-events-none"></div>
 
-<p>
-	<?php
-	if (CakePlugin::loaded('DebugKit')):
-		echo '<span class="notice success">';
-			echo __d('cake_dev', 'DebugKit plugin is present');
-		echo '</span>';
-	else:
-		echo '<span class="notice">';
-			echo __d('cake_dev', 'DebugKit is not installed. It will help you inspect and debug different aspects of your application.');
-			echo '<br/>';
-			echo __d('cake_dev', 'You can install it from %s', $this->Html->link('GitHub', 'https://github.com/cakephp/debug_kit/tree/2.2'));
-		echo '</span>';
-	endif;
-	?>
-</p>
+    <div class="relative z-10 flex h-screen overflow-hidden">
+        
+        <aside class="w-64 border-r border-white/10 flex flex-col p-6 glass-panel hidden md:flex">
+            <div class="flex items-center gap-3 mb-10">
+                <div class="w-8 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+                <div>
+                    <h1 class="font-bold text-sm">Gestão Vendas</h1>
+                    <p class="text-xs text-gray-400">Administrador</p>
+                </div>
+            </div>
+            <nav class="space-y-2">
+                <a href="#" class="block px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg">Dashboard</a>
+                <a href="#" class="block px-4 py-2 hover:bg-white/5 text-gray-400 rounded-lg transition">Relatórios</a>
+                <a href="#" class="block px-4 py-2 hover:bg-white/5 text-gray-400 rounded-lg transition">Corbans</a>
+            </nav>
+        </aside>
 
-<h3><?php echo __d('cake_dev', 'Editing this Page'); ?></h3>
-<p>
-<?php
-echo __d('cake_dev', 'To change the content of this page, edit: %s.<br />
-To change its layout, edit: %s.<br />
-You can also add some CSS styles for your pages at: %s.',
-	'APP/View/Pages/home.ctp', 'APP/View/Layouts/default.ctp', 'APP/webroot/css');
-?>
-</p>
+        <main class="flex-1 p-8 overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold drop-shadow-md">Visão Geral</h2>
+                    <p class="text-gray-300">Monitoramento em tempo real (Renderizado pelo PHP).</p>
+                </div>
+                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm transition shadow-lg shadow-blue-500/20">
+                    Atualizar Dados
+                </button>
+            </div>
 
-<h3><?php echo __d('cake_dev', 'Getting Started'); ?></h3>
-<p>
-	<?php
-	echo $this->Html->link(
-		sprintf('<strong>%s</strong> %s', __d('cake_dev', 'New'), __d('cake_dev', 'CakePHP 2.0 Docs')),
-		'https://book.cakephp.org/2.0/en/',
-		array('target' => '_blank', 'escape' => false)
-	);
-	?>
-</p>
-<p>
-	<?php
-	echo $this->Html->link(
-		__d('cake_dev', 'The 15 min Blog Tutorial'),
-		'https://book.cakephp.org/2.0/en/tutorials-and-examples/blog/blog.html',
-		array('target' => '_blank', 'escape' => false)
-	);
-	?>
-</p>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-green-500">
+                    <p class="text-gray-400 text-xs uppercase">Volume Total</p>
+                    <h3 class="text-2xl font-bold mt-1">R$ 12.4M</h3>
+                </div>
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500">
+                    <p class="text-gray-400 text-xs uppercase">Comissão</p>
+                    <h3 class="text-2xl font-bold mt-1">R$ 840k</h3>
+                </div>
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500">
+                    <p class="text-gray-400 text-xs uppercase">Corbans Ativos</p>
+                    <h3 class="text-2xl font-bold mt-1">142</h3>
+                </div>
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-orange-500">
+                    <p class="text-gray-400 text-xs uppercase">Ticket Médio</p>
+                    <h3 class="text-2xl font-bold mt-1">R$ 4.2k</h3>
+                </div>
+            </div>
 
-<h3><?php echo __d('cake_dev', 'Official Plugins'); ?></h3>
-<p>
-<ul>
-	<li>
-		<?php echo $this->Html->link('DebugKit', 'https://github.com/cakephp/debug_kit/tree/2.2') ?>:
-		<?php echo __d('cake_dev', 'provides a debugging toolbar and enhanced debugging tools for CakePHP applications.'); ?>
-	</li>
-	<li>
-		<?php echo $this->Html->link('Localized', 'https://github.com/cakephp/localized') ?>:
-		<?php echo __d('cake_dev', 'contains various localized validation classes and translations for specific countries'); ?>
-	</li>
-</ul>
-</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="glass-panel p-6 rounded-xl shadow-xl flex flex-col items-center justify-center">
+                    <h3 class="font-bold mb-4 w-full text-left">Meta Mensal</h3>
+                    <div class="relative w-40 h-40 rounded-full border-8 border-white/10 flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-8 border-blue-500 border-t-transparent animate-spin-slow" style="animation-duration: 3s;"></div>
+                        <span class="text-4xl font-bold text-blue-400">78%</span>
+                    </div>
+                </div>
 
-<h3><?php echo __d('cake_dev', 'More about CakePHP'); ?></h3>
-<p>
-<?php echo __d('cake_dev', 'CakePHP is a rapid development framework for PHP which uses commonly known design patterns like Active Record, Association Data Mapping, Front Controller and MVC.'); ?>
-</p>
-<p>
-<?php echo __d('cake_dev', 'Our primary goal is to provide a structured framework that enables PHP users at all levels to rapidly develop robust web applications, without any loss to flexibility.'); ?>
-</p>
+                <div class="glass-panel p-6 rounded-xl col-span-2 shadow-xl">
+                    <h3 class="font-bold mb-4">Ranking Top 3 (PHP Loop)</h3>
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="pb-2">Nome</th>
+                                <th class="pb-2">Volume</th>
+                                <th class="pb-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            $ranking = [
+                                ['nome' => 'João Silva', 'vol' => 'R$ 2.1M', 'status' => 'Crescimento'],
+                                ['nome' => 'Maria Souza', 'vol' => 'R$ 1.8M', 'status' => 'Queda'],
+                                ['nome' => 'Pedro Santos', 'vol' => 'R$ 1.5M', 'status' => 'Estável']
+                            ];
+                            foreach($ranking as $r): ?>
+                            <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                                <td class="py-3"><?php echo $r['nome']; ?></td>
+                                <td class="py-3 font-bold"><?php echo $r['vol']; ?></td>
+                                <td class="py-3 text-green-400"><?php echo $r['status']; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
 
-<ul>
-	<li><a href="https://cakephp.org">CakePHP</a>
-	<ul><li><?php echo __d('cake_dev', 'The Rapid Development Framework'); ?></li></ul></li>
-	<li><a href="https://book.cakephp.org"><?php echo __d('cake_dev', 'CakePHP Documentation'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Your Rapid Development Cookbook'); ?></li></ul></li>
-	<li><a href="https://api.cakephp.org"><?php echo __d('cake_dev', 'CakePHP API'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Quick API Reference'); ?></li></ul></li>
-	<li><a href="https://bakery.cakephp.org"><?php echo __d('cake_dev', 'The Bakery'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Everything CakePHP'); ?></li></ul></li>
-	<li><a href="https://plugins.cakephp.org"><?php echo __d('cake_dev', 'CakePHP Plugins'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'A comprehensive list of all CakePHP plugins created by the community'); ?></li></ul></li>
-	<li><a href="https://community.cakephp.org"><?php echo __d('cake_dev', 'CakePHP Community Center'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Everything related to the CakePHP community in one place'); ?></li></ul></li>
-	<li><a href="http://discourse.cakephp.org/">CakePHP Official Forum </a>
-	<ul><li>CakePHP discussion forum</li></ul></li>
-	<li><a href="http://discourse.cakephp.org/"><?php echo __d('cake_dev', 'CakePHP Official Forum'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'CakePHP discussion forum'); ?></li></ul></li>
-	<li><a href="irc://irc.freenode.net/cakephp">irc.freenode.net #cakephp</a>
-	<ul><li><?php echo __d('cake_dev', 'Live chat about CakePHP'); ?></li></ul></li>
-	<li><a href="https://github.com/cakephp/"><?php echo __d('cake_dev', 'CakePHP Code'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Find the CakePHP code on GitHub and contribute to the framework'); ?></li></ul></li>
-	<li><a href="https://github.com/cakephp/cakephp/issues"><?php echo __d('cake_dev', 'CakePHP Issues'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'CakePHP Issues'); ?></li></ul></li>
-	<li><a href="https://github.com/cakephp/cakephp/wiki#roadmaps"><?php echo __d('cake_dev', 'CakePHP Roadmaps'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'CakePHP Roadmaps'); ?></li></ul></li>
-	<li><a href="https://training.cakephp.org"><?php echo __d('cake_dev', 'Training'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Join a live session and get skilled with the framework'); ?></li></ul></li>
-	<li><a href="https://cakefest.org"><?php echo __d('cake_dev', 'CakeFest'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Don\'t miss our annual CakePHP conference'); ?></li></ul></li>
-	<li><a href="https://cakefoundation.org"><?php echo __d('cake_dev', 'Cake Software Foundation'); ?> </a>
-	<ul><li><?php echo __d('cake_dev', 'Promoting development related to CakePHP'); ?></li></ul></li>
-</ul>
+    <script type="module">
+        import { Renderer, Camera, Transform, Plane, Program, Mesh, Vec2 } from 'https://unpkg.com/ogl@1.0.0/src/index.mjs';
+
+        const container = document.getElementById('canvas-container');
+        
+        const renderer = new Renderer({ alpha: true });
+        const gl = renderer.gl;
+        container.appendChild(gl.canvas);
+
+        // Ajusta tamanho
+        function resize() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', resize, false);
+        resize();
+
+        // Shaders (A mágica das cores e movimento)
+        const vertex = `
+            attribute vec3 position;
+            attribute vec2 uv;
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = vec4(position, 1.0);
+            }
+        `;
+
+        const fragment = `
+            precision highp float;
+            uniform float uTime;
+            uniform vec2 uResolution;
+            varying vec2 vUv;
+
+            // Cores Neon (Roxo, Azul, Rosa)
+            const vec3 c1 = vec3(0.29, 0.11, 0.58); // #4c1d95
+            const vec3 c2 = vec3(0.19, 0.18, 0.50); // #312e81
+            const vec3 c3 = vec3(0.74, 0.09, 0.36); // #be185d
+
+            void main() {
+                vec2 uv = vUv;
+                
+                // Criação do gradiente diagonal
+                float noise = sin(uv.x * 10.0 + uTime * 0.5) * 0.1;
+                float gradient = uv.x + uv.y + noise;
+                
+                // Efeito de "Blinds" (Persianas)
+                float blind = sin((uv.x + uv.y) * 40.0 - uTime);
+                blind = smoothstep(-0.2, 0.2, blind); // Suaviza
+                
+                // Mistura das cores
+                vec3 finalColor = mix(c1, c2, uv.y);
+                finalColor = mix(finalColor, c3, uv.x * 0.8 + sin(uTime * 0.2)*0.2);
+                
+                // Aplica o efeito de luz das persianas
+                finalColor += blind * 0.05; 
+
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        const program = new Program(gl, {
+            vertex,
+            fragment,
+            uniforms: {
+                uTime: { value: 0 },
+                uResolution: { value: new Vec2(window.innerWidth, window.innerHeight) },
+            },
+        });
+
+        const mesh = new Mesh(gl, { geometry: new Plane(gl), program });
+
+        function update(t) {
+            requestAnimationFrame(update);
+            program.uniforms.uTime.value = t * 0.001;
+            renderer.render({ scene: mesh });
+        }
+        
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
