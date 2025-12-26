@@ -1,9 +1,9 @@
 services:
   web:
     build: .
-    container_name: meu_projeto_cake-web-1
+    container_name: meu_projeto_cake-web-2
     ports:
-      - "8078:80"
+      - "8076:80"
     volumes:
       - .:/var/www/html
       # Se você tiver o arquivo de conf do apache, mantenha essa linha. 
@@ -17,9 +17,9 @@ services:
 
   db:
     image: postgres:13
-    container_name: meu_projeto_cake-db-1
+    container_name: meu_projeto_cake-db-2
     ports:
-      - "5423:5432"
+      - "5422:5432"
     environment:
       POSTGRES_DB: meu_projeto_cake_db
       POSTGRES_USER: cake_user

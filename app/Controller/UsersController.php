@@ -10,6 +10,7 @@ class UsersController extends AppController {
     public $components = array(
         'Session',
         'Flash',
+        'Paginator', // Necessário para a paginação funcionar
         'Auth' => array(
             'loginRedirect' => array('controller' => 'posts', 'action' => 'index'),
             'logoutRedirect' => array('controller' => 'users', 'action' => 'login'),
@@ -30,9 +31,9 @@ class UsersController extends AppController {
         // Permite que visitantes se registrem e façam login/logout
         $this->Auth->allow('add', 'login', 'logout');
 
-        // Verifica permissões para ações administrativas
+        // Verifica permissões para ações administrativas (index e delete restritos a Admins)
         $acao = $this->request->params['action'];
-        $acoesAdmin = array('index', 'delete');
+        $acoesAdmin = array('index', 'delete', 'activate');
 
         if (in_array($acao, $acoesAdmin) && $this->Auth->user('role') != 'admin') {
             $this->Flash->error(__('Você não tem permissão para acessar esta área.'));
@@ -55,21 +56,25 @@ class UsersController extends AppController {
     }
 
     /*
-     * LOGIN: Autenticação e definição de Layout
+     * LOGIN: Autenticação
      */
     public function login() {
-        // --- DEFINIÇÃO DO LAYOUT (Correção Visual) ---
         $this->layout = 'login'; 
 
         if ($this->request->is('post')) {
             if ($this->Auth->login()) {
                 
-                // Atualiza a sessão com os dados completos do usuário (incluindo role)
+                // Atualiza a sessão com os dados completos do usuário
                 $userId = $this->Auth->user('id'); 
                 $this->User->recursive = -1;
                 $usuarioCompleto = $this->User->findById($userId);
 
                 if ($usuarioCompleto) {
+                    // Verifica se está ativo (Soft Delete)
+                    if (isset($usuarioCompleto['User']['active']) && $usuarioCompleto['User']['active'] == 0) {
+                        $this->Flash->error(__('Sua conta está desativada. Entre em contato com o administrador.'));
+                        return $this->redirect($this->Auth->logout());
+                    }
                     $this->Session->write('Auth.User', $usuarioCompleto['User']);
                 }
                 return $this->redirect($this->Auth->redirectUrl());
@@ -89,33 +94,68 @@ class UsersController extends AppController {
     }
 
     /*
-     * INDEX: Listagem de usuários
+     * INDEX: Listagem de usuários com Filtros e Paginação
      */
     public function index() {
-        // Define a recursão para coloacfar o usuáriom e os dadoas necessários da tabela
         $this->User->recursive = 0;
         
-        try {
-            $users = $this->User->find('all', array(
-                'order' => 'User.username ASC'
-            ));
-        } catch (Exception $e) {
-            $this->Flash->error(__('Erro ao listar usuários: ') . $e->getMessage());
-            $users = array();
+        // 1. Inicializa condições de busca
+        $conditions = array();
+
+        // 2. Captura dados da URL (GET)
+        $filtroTexto = $this->request->query('search_query');
+        $filtroRole = $this->request->query('filter_role');
+        $filtroStatus = $this->request->query('filter_status');
+
+        // --- Filtro por Nome (Username) ---
+        if (!empty($filtroTexto)) {
+            $termo = trim($filtroTexto);
+            $conditions['User.username ILIKE'] = '%' . $termo . '%';
         }
+
+        // --- Filtro por Função (Role) ---
+        if (!empty($filtroRole)) {
+            $conditions['User.role'] = $filtroRole;
+        }
+
+        // --- Filtro por Status (Ativo/Inativo) ---
+        // Verifica se não é nulo e nem string vazia (pois '0' é falso em PHP)
+        if ($filtroStatus !== null && $filtroStatus !== '') {
+            $conditions['User.active'] = $filtroStatus;
+        }
+
+        // Configura Paginação
+        $this->Paginator->settings = array(
+            'conditions' => $conditions,
+            'limit' => 10,
+            'order' => array('User.username' => 'ASC')
+        );
         
-        $this->set('users', $users);
+        try {
+            // Usa o Paginator em vez de find('all')
+            $this->set('users', $this->Paginator->paginate('User'));
+        } catch (Exception $e) {
+            // Se a paginação falhar (ex: página inexistente), volta para a primeira
+            $this->request->query['page'] = 1;
+            $this->redirect(array('action' => 'index', '?' => $this->request->query));
+        }
+
+        // Passa os valores atuais para a View manter o formulário preenchido
+        $this->set('currentSearch', $filtroTexto);
+        $this->set('currentRole', $filtroRole);
+        $this->set('currentStatus', $filtroStatus);
     }
 
     /*
      * ADD: Registro de novo usuário
      */
     public function add() {
-        // --- DEFINIÇÃO DO LAYOUT (Correção Visual) ---
         $this->layout = 'login'; 
 
         if ($this->request->is('post')) {
             $this->User->create();
+            // Define como ativo por padrão
+            $this->request->data['User']['active'] = 1;
             
             if ($this->User->save($this->request->data)) {
                 
@@ -142,7 +182,7 @@ class UsersController extends AppController {
     }
     
     /*
-     * EDIT: Edição de usuário com regras de segurança
+     * EDIT: Edição de usuário
      */
     public function edit($id = null) {
         if (!$id) {
@@ -169,15 +209,15 @@ class UsersController extends AppController {
             $currentRole = $usuarioSendoEditado['User']['role'];
             $newRole = isset($formData['User']['role']) ? $formData['User']['role'] : $currentRole;
 
-            // Regras para Admin
+            // Regras de Proteção para Admin
             if ($adminLogado['role'] === 'admin') {
-                // REGRA: Admin não pode se rebaixar
+                // Admin não pode se rebaixar
                 if ($adminLogado['id'] == $id && $newRole !== 'admin') {
                     $this->Flash->error('AÇÃO PROIBIDA: Um Admin não pode alterar seu próprio perfil para Autor.');
                     $formData['User']['role'] = 'admin'; 
                     $this->request->data['User']['role'] = 'admin'; 
                 } 
-                // REGRA: Admin não pode alterar perfil de outro Admin
+                // Admin não pode alterar outro Admin
                 else if ($adminLogado['id'] != $id && $currentRole === 'admin' && $newRole !== 'admin') {
                     $this->Flash->error('AÇÃO PROIBIDA: Você não pode alterar o perfil de outro Administrador.');
                     $formData['User']['role'] = 'admin'; 
@@ -185,7 +225,7 @@ class UsersController extends AppController {
                 }
             }
 
-            // Remove a senha do array se estiver vazia (para não salvar senha em branco), mantendo a senha antiga
+            // Não altera a senha se o campo estiver vazio
             if (empty($formData['User']['password'])) {
                 unset($formData['User']['password']);
             }
@@ -193,7 +233,7 @@ class UsersController extends AppController {
             if ($this->User->save($formData)) {
                 $this->Flash->success(__('Usuário atualizado com sucesso.'));
                 
-                // Se editou a si mesmo, atualiza a sessão
+                // Se editou a si mesmo, atualiza a sessão para refletir mudanças (nome, etc)
                 if ($adminLogado['id'] == $id) {
                      $this->Session->write('Auth.User', $this->User->read(null, $id)['User']);
                 }
@@ -205,20 +245,20 @@ class UsersController extends AppController {
             
         } else {
             $this->request->data = $usuarioSendoEditado;
-            unset($this->request->data['User']['password']); // Não envia a senha hash para o formulário
+            unset($this->request->data['User']['password']); 
         }
     }
     
-     // --- LÓGICA DE SOFT DELETE (Desativar) ---
+    /*
+     * DELETE: Desativar Usuário (Soft Delete)
+     */
     public function delete($id = null) {
-        // Verifica se a requisição é POST (segurança)
         if (!$this->request->is('post')) {
             throw new MethodNotAllowedException();
         }
 
         $this->User->id = $id;
         
-        // Verifica se o usuário existe no banco
         if (!$this->User->exists()) {
             $this->Flash->error(__('Usuário inválido.'));
             return $this->redirect(array('action' => 'index'));
@@ -227,19 +267,17 @@ class UsersController extends AppController {
         $adminLogado = $this->Auth->user();
         $userToDelete = $this->User->findById($id);
 
-        // REGRA 1: Admin não pode se desativar (segurança para não trancar o sistema)
+        // Regras de Proteção
         if ($adminLogado['id'] == $id) {
              $this->Flash->error('AÇÃO PROIBIDA: Você não pode desativar sua própria conta.');
              return $this->redirect(array('action' => 'index'));
         }
-
-        // REGRA 2: Admin não pode desativar outro Admin (hierarquia)
         if ($userToDelete['User']['role'] === 'admin') {
             $this->Flash->error('AÇÃO PROIBIDA: Você não pode desativar outro usuário Administrador.');
             return $this->redirect(array('action' => 'index'));
         }
         
-        // MUDANÇA: Update 'active' para 0 em vez de deletar
+        // MUDANÇA: Update 'active' para 0 em vez de deletar fisicamente
         if ($this->User->saveField('active', 0)) {
             $this->Flash->success(__('Usuário desativado com sucesso. (Ele permanece no banco de dados)'));
         } else {
@@ -249,7 +287,9 @@ class UsersController extends AppController {
         return $this->redirect(array('action' => 'index'));
     }
 
-    // --- NOVA FUNÇÃO: REATIVAR USUÁRIO ---
+    /*
+     * ACTIVATE: Reativar Usuário
+     */
     public function activate($id = null) {
         if (!$this->request->is('post')) {
             throw new MethodNotAllowedException();

@@ -2,75 +2,53 @@
     
     <!-- MENU SUPERIOR ADAPTATIVO -->
     <div class="row align-items-center mb-4 border-bottom pb-3">
-        
-        <!-- COLUNA DA ESQUERDA: Botões de Ação / Menu Hambúrguer -->
         <div class="col-auto">
-            
-            <!-- VISÃO DESKTOP (md para cima): Botões visíveis lado a lado -->
             <div class="d-none d-md-flex gap-2">
                 <span class="text-muted small fw-bold text-uppercase me-2 align-self-center">Navegação:</span>
-                
                 <?php echo $this->Html->link('<i class="bi bi-house-door-fill"></i> Dashboard', 
                     array('controller' => 'posts', 'action' => 'index'), 
                     array('class' => 'btn btn-sm btn-secondary', 'escape' => false)); 
                 ?>
-                
-                <?php echo $this->Html->link('<i class="bi bi-plus-circle-fill"></i> Novo Post', 
-                    array('action' => 'add'), 
-                    array('class' => 'btn btn-sm btn-primary', 'escape' => false)); 
-                ?>
+                <?php if ($this->Session->read('Auth.User')): ?>
+                    <?php echo $this->Html->link('<i class="bi bi-plus-circle-fill"></i> Novo Post', 
+                        array('action' => 'add'), 
+                        array('class' => 'btn btn-sm btn-primary', 'escape' => false)); 
+                    ?>
+                <?php endif; ?>
             </div>
-
-            <!-- VISÃO MOBILE (abaixo de md): Menu Hambúrguer -->
+            <!-- Menu Mobile -->
             <div class="d-md-none">
                 <div class="dropdown">
-                    <!-- Ícone de 3 traços (Menu Hambúrguer) -->
-                    <button class="btn btn-light border" type="button" id="mobileMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-list fs-4"></i> <!-- Ícone Grande -->
-                    </button>
-                    
-                    <!-- O Menu que aparece ao clicar -->
-                    <ul class="dropdown-menu shadow border-0" aria-labelledby="mobileMenuBtn">
-                        <li>
-                            <?php echo $this->Html->link('<i class="bi bi-house-door-fill me-2"></i> Dashboard', 
-                                array('controller' => 'posts', 'action' => 'index'), 
-                                array('class' => 'dropdown-item py-2', 'escape' => false)); 
-                            ?>
-                        </li>
-                        <li>
-                            <?php echo $this->Html->link('<i class="bi bi-plus-circle-fill me-2"></i> Novo Post', 
-                                array('action' => 'add'), 
-                                array('class' => 'dropdown-item py-2 text-primary fw-bold', 'escape' => false)); 
-                            ?>
-                        </li>
+                    <button class="btn btn-light border" type="button" id="mobileMenuBtn" data-bs-toggle="dropdown"><i class="bi bi-list fs-4"></i></button>
+                    <ul class="dropdown-menu shadow border-0">
+                        <li><?php echo $this->Html->link('Dashboard', array('action' => 'index'), array('class' => 'dropdown-item')); ?></li>
+                        <?php if ($this->Session->read('Auth.User')): ?>
+                        <li><?php echo $this->Html->link('Novo Post', array('action' => 'add'), array('class' => 'dropdown-item')); ?></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
-
         </div>
-
-        <!-- COLUNA DA DIREITA: Título da Página -->
         <div class="col d-flex justify-content-end align-items-center">
-             <h1 class="h5 text-dark m-0 fw-bold d-none d-md-block">Gerenciar Posts</h1>
-             
-             <!-- Título Mobile (aparece ao lado do hambúrguer) -->
-             <h1 class="h5 text-dark m-0 fw-bold d-md-none">Meus Posts</h1>
+             <h1 class="h5 text-dark m-0 fw-bold">Gerenciar Posts</h1>
         </div>
     </div>
 
     <div class="row">
-        <!-- CONTEÚDO PRINCIPAL -->
         <main role="main" class="col-12">
 
-            <!-- --- FILTROS DE BUSCA --- -->
+            <!-- --- FILTROS (URL Limpa + Mantém Valores) --- -->
             <div class="card mb-4 bg-light border-0 shadow-sm">
                 <div class="card-body">
-                    <form action="<?php echo $this->Html->url(array('action' => 'index')); ?>" method="get" class="row g-3">
+                    <!-- Method POST esconde os dados da URL -->
+                    <form action="<?php echo $this->Html->url(array('action' => 'index')); ?>" method="post" class="row g-3">
                         
                         <!-- 1. Busca Texto -->
                         <div class="col-md-4">
                             <label class="form-label fw-bold small text-secondary">Título ou Conteúdo</label>
-                            <input type="text" name="search_query" class="form-control" placeholder="Digite para buscar..." value="<?php echo isset($currentSearch) ? h($currentSearch) : ''; ?>">
+                            <!-- AQUI: Preenche o value com a variável $searchQuery vinda do Controller -->
+                            <input type="text" name="search_query" class="form-control" placeholder="Digite para buscar..." 
+                                   value="<?php echo isset($searchQuery) ? h($searchQuery) : ''; ?>">
                         </div>
 
                         <!-- 2. Status -->
@@ -78,24 +56,33 @@
                             <label class="form-label fw-bold small text-secondary">Status</label>
                             <select name="filter_status" class="form-select">
                                 <option value="">Todos</option>
-                                <option value="publicado" <?php echo (isset($currentStatus) && $currentStatus == 'publicado') ? 'selected' : ''; ?>>Publicado</option>
-                                <option value="rascunho" <?php echo (isset($currentStatus) && $currentStatus == 'rascunho') ? 'selected' : ''; ?>>Rascunho</option>
-                                <option value="arquivado" <?php echo (isset($currentStatus) && $currentStatus == 'arquivado') ? 'selected' : ''; ?>>Arquivado</option>
+                                <?php 
+                                    $st = isset($filterStatus) ? $filterStatus : ''; 
+                                ?>
+                                <option value="publicado" <?php echo ($st == 'publicado') ? 'selected' : ''; ?>>Publicado</option>
+                                <option value="rascunho" <?php echo ($st == 'rascunho') ? 'selected' : ''; ?>>Rascunho</option>
+                                <option value="arquivado" <?php echo ($st == 'arquivado') ? 'selected' : ''; ?>>Arquivado</option>
                             </select>
                         </div>
 
-                        <!-- 3. Data (Ano / Mês / Dia) -->
+                        <!-- 3. Data -->
                         <div class="col-md-4">
                             <label class="form-label fw-bold small text-secondary">Data de Criação</label>
                             <div class="input-group">
+                                <?php 
+                                    $curY = isset($year) ? $year : '';
+                                    $curM = isset($month) ? $month : '';
+                                    $curD = isset($day) ? $day : '';
+                                ?>
                                 <select name="year" id="filterYear" class="form-select" onchange="updateDays()">
                                     <option value="">Ano</option>
                                     <?php 
                                     $startYear = 2019;
-                                    $endYear = 2025;
+                                    $endYear = date('Y'); 
                                     for ($i = $endYear; $i >= $startYear; $i--) {
-                                        $selected = (isset($currentYear) && $currentYear == $i) ? 'selected' : '';
-                                        echo "<option value='$i' $selected>$i</option>";
+                                        // Verifica se deve selecionar
+                                        $sel = ($curY == $i) ? 'selected' : '';
+                                        echo "<option value='$i' $sel>$i</option>";
                                     }
                                     ?>
                                 </select>
@@ -105,14 +92,15 @@
                                     <?php 
                                     $meses = array(1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez');
                                     foreach ($meses as $num => $nome) {
-                                        $selected = (isset($currentMonth) && $currentMonth == $num) ? 'selected' : '';
-                                        echo "<option value='$num' $selected>$nome</option>";
+                                        $sel = ($curM == $num) ? 'selected' : '';
+                                        echo "<option value='$num' $sel>$nome</option>";
                                     }
                                     ?>
                                 </select>
 
                                 <select name="day" id="filterDay" class="form-select">
                                     <option value="">Dia</option>
+                                    <!-- Dias preenchidos via JS -->
                                 </select>
                             </div>
                         </div>
@@ -120,7 +108,8 @@
                         <!-- Botões -->
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100 me-2"><i class="bi bi-search"></i></button>
-                            <a href="<?php echo $this->Html->url(array('action' => 'index')); ?>" class="btn btn-secondary" title="Limpar Filtros"><i class="bi bi-x-lg"></i></a>
+                            <!-- Botão Limpar com parâmetro GET clear=1 para o controller limpar a sessão -->
+                            <a href="<?php echo $this->Html->url(array('action' => 'index', '?' => array('clear' => 1))); ?>" class="btn btn-secondary" title="Limpar Filtros"><i class="bi bi-x-lg"></i></a>
                         </div>
                     </form>
                 </div>
@@ -172,6 +161,11 @@
                                         array('action' => 'view', $post['Post']['id']), 
                                         array('class' => 'btn btn-sm btn-outline-primary border-0', 'escape' => false)); 
                                     ?>
+                                    
+                                    <?php 
+                                        $currentUser = $this->Session->read('Auth.User');
+                                        if ($currentUser && ($currentUser['role'] === 'admin' || $currentUser['id'] == $post['Post']['user_id'])): 
+                                    ?>
                                     <div>
                                         <?php echo $this->Html->link('<i class="bi bi-pencil-square"></i>', 
                                             array('action' => 'edit', $post['Post']['id']), 
@@ -182,6 +176,7 @@
                                             array('class' => 'btn btn-sm btn-light text-danger', 'escape' => false, 'confirm' => 'Tem certeza?')); 
                                         ?>
                                     </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -212,7 +207,8 @@
 </div>
 
 <script>
-    var selectedDay = "<?php echo isset($currentDay) ? $currentDay : ''; ?>";
+    // Recupera o dia selecionado vindo do PHP
+    var selectedDay = "<?php echo isset($curD) ? $curD : ''; ?>";
 
     function updateDays() {
         var yearSelect = document.getElementById("filterYear");
@@ -221,6 +217,11 @@
         
         var year = yearSelect.value;
         var month = monthSelect.value;
+
+        // Se o usuário selecionou algo manualmente agora, usa isso. 
+        // Se não, usa o que veio do banco (selectedDay).
+        var currentVal = daySelect.value;
+        if(!currentVal && selectedDay) currentVal = selectedDay;
 
         daySelect.innerHTML = '<option value="">Dia</option>';
 
@@ -232,12 +233,13 @@
                 var option = document.createElement("option");
                 option.value = i;
                 option.text = i;
-                if (i == selectedDay) option.selected = true;
+                if (i == currentVal) option.selected = true;
                 daySelect.appendChild(option);
             }
         }
     }
 
+    // Executa ao carregar para repopular os dias
     window.onload = function() {
         updateDays();
     };
@@ -261,8 +263,10 @@
     .page-item a {
         color: #5e3573;
     }
-
-    /* CSS DO DROPDOWN MOBILE */
+    .page-item a:hover {
+        color: #4a2a5a;
+        background-color: #e9ecef;
+    }
     .dropdown-item:active, .dropdown-item:hover {
         background-color: #f8f9fa;
         color: #5e3573;

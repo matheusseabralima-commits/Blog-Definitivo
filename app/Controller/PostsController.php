@@ -4,25 +4,37 @@ App::uses('AppController', 'Controller');
 /**
  * Posts Controller
  *
+ * Responsável por gerenciar todas as ações relacionadas aos posts do blog:
+ * Listagem, Visualização, Criação, Edição e Exclusão.
+ *
  * @property Post $Post
  * @property FlashComponent $Flash
  * @property AuthComponent $Auth
  * @property PaginatorComponent $Paginator
+ * @property SessionComponent $Session
  */
 class PostsController extends AppController {
 
-    public $helpers = array('Html', 'Form', 'Flash');
-    public $components = array('Flash', 'Paginator');
+    /**
+     * Helpers disponíveis na View
+     */
+    public $helpers = array('Html', 'Form', 'Flash', 'Text', 'Time');
+
+    /**
+     * Componentes carregados
+     */
+    public $components = array('Flash', 'Paginator', 'Session');
 
     /**
      * beforeFilter callback
+     * Executado antes de qualquer ação do controller.
      *
      * @return void
      */
     public function beforeFilter() {
         parent::beforeFilter();
         // Permite que qualquer pessoa (mesmo não logada) acesse a lista (index) e a leitura (view)
-        // A proteção de rascunhos será feita dentro dessas funções para filtrar o conteúdo.
+        // A proteção de rascunhos é feita logicamente dentro dessas funções.
         $this->Auth->allow('index', 'view');
     }
 
@@ -30,23 +42,23 @@ class PostsController extends AppController {
      * isAuthorized callback
      * Define permissões gerais baseadas no papel do usuário
      *
-     * @param array $user
+     * @param array $user O usuário logado
      * @return boolean
      */
     public function isAuthorized($user) {
-        // Admins podem fazer tudo no sistema
+        // Regra 1: Admins podem fazer tudo no sistema
         if (isset($user['role']) && $user['role'] === 'admin') {
             return true;
         }
 
-        // Autores: só podem acessar a tela de adicionar
+        // Regra 2: Autores podem acessar a tela de adicionar
         if (in_array($this->action, array('add'))) {
             return true;
         }
         
-        // IMPORTANTE: Liberamos o acesso às ações 'edit' e 'delete' aqui no isAuthorized
-        // para tratar a lógica específica (dono do post vs outros) dentro das próprias funções.
-        // Isso permite exibir aquela mensagem amarela personalizada em vez do erro padrão "Forbidden".
+        // Regra 3: Liberamos 'edit' e 'delete' aqui para tratar a permissão
+        // específica (dono vs outros) dentro das próprias funções, permitindo
+        // mensagens de erro personalizadas (Flash Amarelo) em vez de erro 403 padrão.
         if (in_array($this->action, array('edit', 'delete'))) {
             return true;
         }
@@ -61,52 +73,82 @@ class PostsController extends AppController {
 
     /**
      * index method
-     * Listagem de posts com filtros avançados e proteção de visibilidade
+     * Listagem de posts com filtros avançados e URL Limpa (Padrão PRG)
+     *
+     * Lógica:
+     * 1. Se receber POST (formulário), salva filtros na Sessão e redireciona.
+     * 2. Se receber GET, lê da Sessão e aplica os filtros.
+     * Isso mantém a URL limpa (ex: /posts) sem parâmetros feios.
      *
      * @return void
      */
     public function index() {
-        // 1. LIMPEZA DE ID E MODELO (CRUCIAL)
-        // Reseta o modelo para garantir que nenhum ID de save anterior interfira na busca
+        // 1. Limpeza preventiva do Model
         $this->Post->create(); 
         $this->Post->id = null; 
         $this->Post->recursive = 0;
+
+        // -----------------------------------------------------------
+        // LÓGICA DE FILTRO VIA SESSÃO (URL LIMPA)
+        // -----------------------------------------------------------
+
+        // A. Botão "Limpar Filtros" (?clear=1 na URL)
+        if (isset($this->request->query['clear'])) {
+            $this->Session->delete('Post.Filter');
+            return $this->redirect(array('action' => 'index'));
+        }
+
+        // B. Processamento do Formulário (POST)
+        if ($this->request->is('post')) {
+            // Verifica se veio do formulário de busca
+            if (!empty($this->request->data)) {
+                // Salva os filtros na memória (Sessão)
+                $this->Session->write('Post.Filter', $this->request->data);
+            }
+            // Redireciona para GET (Remove o POST do navegador e limpa URL)
+            return $this->redirect(array('action' => 'index'));
+        }
+
+        // C. Leitura dos Filtros da Memória
+        // Se não houver nada na sessão, retorna array vazio.
+        $filters = $this->Session->read('Post.Filter');
         
-        // 2. Inicializa array de condições
+        // Extrai variáveis para facilitar o uso na query e na View
+        $searchQuery  = isset($filters['search_query']) ? $filters['search_query'] : '';
+        $filterStatus = isset($filters['filter_status']) ? $filters['filter_status'] : '';
+        $year         = isset($filters['year']) ? $filters['year'] : '';
+        $month        = isset($filters['month']) ? $filters['month'] : '';
+        $day          = isset($filters['day']) ? $filters['day'] : '';
+
+        // -----------------------------------------------------------
+        // MONTAGEM DAS CONDIÇÕES DE BUSCA (QUERY)
+        // -----------------------------------------------------------
+        
         $conditions = array();
 
-        // 3. Captura dados da URL (GET parameters) para filtros
-        $filtroTitulo = $this->request->query('search_query');
-        $filtroStatus = $this->request->query('filter_status');
-        
-        $ano = $this->request->query('year');
-        $mes = $this->request->query('month');
-        $dia = $this->request->query('day');
-
-        // --- LÓGICA 1: Busca por Texto (Título OU Conteúdo) ---
-        if (!empty($filtroTitulo)) {
-            $termo = trim($filtroTitulo);
-            // ILIKE é case-insensitive no PostgreSQL (LIKE no MySQL precisa de collation correta)
+        // Filtro 1: Busca Texto (Título ou Corpo)
+        if (!empty($searchQuery)) {
+            $termo = trim($searchQuery);
+            // ILIKE é case-insensitive no PostgreSQL
             $conditions['OR'] = array(
                 'Post.title ILIKE' => '%' . $termo . '%',
                 'Post.body ILIKE' => '%' . $termo . '%'
             );
         }
 
-        // --- LÓGICA 2: Status (Texto) ---
-        if (!empty($filtroStatus)) {
-            $statusLimpo = strtolower(trim($filtroStatus));
+        // Filtro 2: Status
+        if (!empty($filterStatus)) {
+            $statusLimpo = strtolower(trim($filterStatus));
             
-            // Mapa para suportar termos em inglês se necessário
+            // Mapa para garantir compatibilidade se o banco usar inglês
             $mapaStatus = array(
                 'publicado' => 'published',
                 'rascunho' => 'draft',
                 'arquivado' => 'archived'
             );
-            
             $statusIngles = isset($mapaStatus[$statusLimpo]) ? $mapaStatus[$statusLimpo] : $statusLimpo;
 
-            // Força um grupo OR explícito para encontrar o status em PT ou EN
+            // Busca pelo termo em PT ou EN
             $conditions['AND'][] = array(
                 'OR' => array(
                     array('Post.status ILIKE' => $statusLimpo),
@@ -115,64 +157,60 @@ class PostsController extends AppController {
             );
         }
 
-        // --- LÓGICA 3: Filtro de Data (DATAS) ---
-        if (!empty($ano)) {
+        // Filtro 3: Datas Complexas
+        if (!empty($year)) {
+            // Define Mês (Padrão: ano inteiro se mês vazio)
+            $m_ini = !empty($month) ? str_pad($month, 2, '0', STR_PAD_LEFT) : '01';
+            $m_fim = !empty($month) ? str_pad($month, 2, '0', STR_PAD_LEFT) : '12';
             
-            // Define Mês Início/Fim (Padrão: ano inteiro se mês não for informado)
-            $mes_inicio = !empty($mes) ? str_pad($mes, 2, '0', STR_PAD_LEFT) : '01';
-            $mes_fim    = !empty($mes) ? str_pad($mes, 2, '0', STR_PAD_LEFT) : '12';
+            // Define Dia
+            $d_ini = !empty($day) ? str_pad($day, 2, '0', STR_PAD_LEFT) : '01';
             
-            // Define Dia Início
-            $dia_inicio = !empty($dia) ? str_pad($dia, 2, '0', STR_PAD_LEFT) : '01';
-            
-            // Define Dia Fim
-            if (!empty($dia)) {
-                $dia_fim = str_pad($dia, 2, '0', STR_PAD_LEFT);
+            if (!empty($day)) {
+                $d_fim = str_pad($day, 2, '0', STR_PAD_LEFT);
             } else {
-                // Se não tem dia, pega o último dia do mês selecionado via função date
-                $dia_fim = date('t', strtotime("$ano-$mes_fim-01"));
+                // Último dia do mês (lógica robusta para anos bissextos etc)
+                $d_fim = date('t', strtotime("$year-$m_fim-01"));
             }
 
-            // Formata as datas para o PostgreSQL (YYYY-MM-DD HH:MM:SS)
-            $data_inicio = "$ano-$mes_inicio-$dia_inicio 00:00:00";
-            $data_fim    = "$ano-$mes_fim-$dia_fim 23:59:59";
+            // Formata para timestamp do banco
+            $data_inicio = "$year-$m_ini-$d_ini 00:00:00";
+            $data_fim    = "$year-$m_fim-$d_fim 23:59:59";
 
-            // Adiciona ranges de data às condições
             $conditions['Post.created >='] = $data_inicio;
             $conditions['Post.created <='] = $data_fim;
         }
 
-        // --- LÓGICA 4: PROTEÇÃO DE VISIBILIDADE (RASCUNHOS) ---
-        // Garante que rascunhos não vazem para quem não deve ver
+        // -----------------------------------------------------------
+        // PROTEÇÃO DE VISIBILIDADE (RASCUNHOS)
+        // -----------------------------------------------------------
         $user = $this->Auth->user();
         
-        // Se NÃO for Admin, aplicamos restrições estritas
+        // Se NÃO for Admin, aplica restrições
         if (!$user || (isset($user['role']) && $user['role'] !== 'admin')) {
             
-            // Regra A: Visitantes (Não logados) -> Só veem PUBLICADO
             if (!$user) {
-                // Força status publicado. Isso sobrescreve qualquer tentativa de buscar 'rascunho' na URL.
+                // VISITANTE: Força apenas Publicados (ignora qualquer filtro de status tentando ver rascunho)
                 $conditions['Post.status'] = 'publicado';
-            } 
-            // Regra B: Autores (Logados) -> Veem PUBLICADO + SEUS PRÓPRIOS RASCUNHOS
-            else {
-                // Cria uma condição isolada de escopo usando chaves numéricas para gerar um bloco ( ) no SQL
+            } else {
+                // AUTOR: Vê Publicados de todos + Seus próprios Rascunhos
+                // Cria um grupo OR isolado para não conflitar com a busca de texto
                 $scopeCondition = array(
                     'OR' => array(
                         'Post.status' => 'publicado',
                         array(
                             'Post.status' => 'rascunho',
-                            'Post.user_id' => $user['id'] // Apenas rascunhos DO USUÁRIO
+                            'Post.user_id' => $user['id']
                         )
                     )
                 );
-                
-                // Adiciona ao array principal. O CakePHP une isso com AND às outras condições de busca.
                 $conditions[] = $scopeCondition;
             }
         }
 
-        // Configura a Paginação
+        // -----------------------------------------------------------
+        // PAGINAÇÃO
+        // -----------------------------------------------------------
         $this->Paginator->settings = array(
             'conditions' => $conditions,
             'limit' => 10, 
@@ -182,43 +220,40 @@ class PostsController extends AppController {
         try {
             $this->set('posts', $this->Paginator->paginate('Post'));
         } catch (NotFoundException $e) {
-            // Se a paginação estourar (ex: deletou post da pág 5), volta pra pág 1
-            $this->request->query['page'] = 1;
-            $this->redirect(array('action' => 'index', '?' => $this->request->query));
+            // Se a paginação estourar (ex: estava na pág 5 e filtrou algo com 1 pág),
+            // reseta os filtros para evitar ficar preso no erro.
+            $this->Session->delete('Post.Filter');
+            return $this->redirect(array('action' => 'index'));
         }
 
-        // Mantém os filtros preenchidos na View (Formulário de Busca)
-        $this->set('currentSearch', $filtroTitulo);
-        $this->set('currentStatus', $filtroStatus);
-        $this->set('currentYear', $ano);
-        $this->set('currentMonth', $mes);
-        $this->set('currentDay', $dia);
+        // Envia variáveis para a View preencher o formulário (manter estado visual)
+        $this->set(compact('searchQuery', 'filterStatus', 'year', 'month', 'day'));
     }
 
     /**
      * view method
-     * Exibe um post único
+     * Exibe um post único com detalhes
      *
      * @throws NotFoundException
      * @param string $id
      * @return void
      */
     public function view($id = null) {
-        // Limpa qualquer estado anterior
+        // Limpa estado anterior
         $this->Post->id = null;
         
         if (!$id) {
             throw new NotFoundException(__('Post inválido'));
         }
 
-        // Configurações da busca (trazendo dados relacionados: Autor, Anexos, Comentários)
+        // Busca completa com associações (JOINs)
+        // Removemos 'Attachment' daqui também se você não quiser nem exibir os antigos
         $options = array(
             'conditions' => array('Post.' . $this->Post->primaryKey => $id),
             'contain' => array(
-                'User', 
-                'Attachment', 
+                'User',          // Autor do post
                 'Comment' => array(
-                    'User', 
+                    'User',      // Autor do comentário
                     'order' => 'Comment.created ASC' 
                 ),
                 'Vote' 
@@ -231,22 +266,20 @@ class PostsController extends AppController {
             throw new NotFoundException(__('Post inválido'));
         }
 
-        // --- PROTEÇÃO DE VISIBILIDADE (VIEW) ---
-        // Se alguém tentar acessar a URL direta /posts/view/ID de um rascunho
+        // --- PROTEÇÃO DE RASCUNHOS (Acesso Direto via URL) ---
         if (isset($post['Post']['status']) && $post['Post']['status'] === 'rascunho') {
             $user = $this->Auth->user();
             
-            // 1. Visitante: Retorna 404 fingindo que o post não existe
+            // 1. Visitante: Retorna 404 (segurança por obscuridade)
             if (!$user) {
                 throw new NotFoundException(__('Página não encontrada'));
             }
             
-            // 2. Logado: Verifica se é o DONO ou ADMIN
+            // 2. Logado: Verifica propriedade
             $isOwner = ($post['Post']['user_id'] == $user['id']);
             $isAdmin = (isset($user['role']) && $user['role'] === 'admin');
             
             if (!$isOwner && !$isAdmin) {
-                // Redireciona com erro se tentar ver rascunho alheio
                 $this->Flash->error(__('Você não tem permissão para visualizar este rascunho.'));
                 return $this->redirect(array('action' => 'index'));
             }
@@ -258,52 +291,20 @@ class PostsController extends AppController {
 
     /**
      * add method
-     * Adiciona novo post
+     * Adiciona novo post (Simples, sem anexos)
      *
      * @return void
      */
     public function add() {
         if ($this->request->is('post')) {
-            $this->Post->create(); // Garante um modelo limpo
-            $this->request->data['Post']['user_id'] = $this->Auth->user('id'); // Associa ao usuário logado
+            $this->Post->create(); // Limpa modelo
+            
+            // Força o ID do usuário logado (segurança)
+            $this->request->data['Post']['user_id'] = $this->Auth->user('id'); 
 
             if ($this->Post->save($this->request->data)) {
-                $postId = $this->Post->id;
-                $postSalvo = true;
-                $erroAnexo = false;
-
-                // Lógica de Upload de Anexo
-                $file = isset($this->request->data['Attachment']['file']) ? $this->request->data['Attachment']['file'] : null;
-                
-                if ($file && !empty($file['name']) && $file['error'] === UPLOAD_ERR_OK) {
-                    
-                    $filename = $this->Post->Attachment->saveFile($this->request->data['Attachment']);
-
-                    if ($filename) {
-                        $attachmentData = array(
-                            'post_id' => $postId,
-                            'filename' => $filename,
-                            'path' => 'files/attachments/' . $filename 
-                        );
-                        $this->Post->Attachment->create();
-                        if (!$this->Post->Attachment->save($attachmentData)) {
-                            $erroAnexo = true;
-                        }
-                    } else {
-                        $erroAnexo = true;
-                    }
-                }
-
-                if ($postSalvo && !$erroAnexo) {
-                    $this->Flash->success(__('Seu post (e anexo, se houver) foi salvo com sucesso.'));
-                    // Limpa o ID antes de redirecionar para evitar conflitos
-                    $this->Post->id = null;
-                    return $this->redirect(array('action' => 'index'));
-
-                } elseif ($postSalvo && $erroAnexo) {
-                    $this->Flash->warning(__('O post foi salvo, mas houve um erro ao processar o anexo.'));
-                    return $this->redirect(array('action' => 'edit', $postId));
-                }
+                $this->Flash->success(__('Seu post foi salvo com sucesso.'));
+                return $this->redirect(array('action' => 'index'));
             } else {
                 $this->Flash->error(__('Não foi possível adicionar seu post. Verifique os erros e tente novamente.'));
             }
@@ -313,7 +314,7 @@ class PostsController extends AppController {
 
     /**
      * edit method
-     * Edição de posts existentes
+     * Edição de posts existentes com validação de propriedade
      *
      * @throws NotFoundException
      * @param string $id
@@ -329,16 +330,13 @@ class PostsController extends AppController {
             throw new NotFoundException(__('Post inválido.'));
         }
         
+        // --- VALIDAÇÃO DE PERMISSÃO ---
+        // Apenas Dono ou Admin podem editar
         if ($this->Auth->user('role') != 'admin' && $post['Post']['user_id'] != $this->Auth->user('id')) {
-            
             $this->Flash->set(
-                'Você não tem permissão de Edição desse Post, mas pode criar um em Novo Post.',
-                array(
-                    'element' => 'default', 
-                    'params' => array('class' => 'alert alert-warning') 
-                )
+                'Você não tem permissão de Edição desse Post.',
+                array('element' => 'default', 'params' => array('class' => 'alert alert-warning'))
             );
-            
             return $this->redirect(array('action' => 'index'));
         }
         
@@ -348,9 +346,8 @@ class PostsController extends AppController {
             if ($this->Post->save($this->request->data)) {
                 $this->Flash->success(__('Seu post foi atualizado com sucesso.'));
                 
-                // LIMPA O ID ANTES DE REDIRECIONAR
+                // Limpa ID para evitar contaminação em operações futuras
                 $this->Post->id = null;
-                $this->Post->create(); // Reseta o modelo
                 
                 return $this->redirect(array('action' => 'index'));
             } else {
@@ -358,6 +355,7 @@ class PostsController extends AppController {
             }
         }
         
+        // Preenche o formulário se não houve submissão
         if (!$this->request->data) {
             $this->request->data = $post;
         }
@@ -375,6 +373,7 @@ class PostsController extends AppController {
      * @return void
      */
     public function delete($id = null) {
+        // Exige POST/DELETE para segurança contra links maliciosos
         if ($this->request->is('get')) {
             throw new MethodNotAllowedException();
         }
@@ -386,36 +385,27 @@ class PostsController extends AppController {
         
         $post = $this->Post->findById($id);
         
-        // --- REGRA PERSONALIZADA DE PERMISSÃO (DELETE) ---
-        // Verifica se é dono ou admin. Se não for, exibe mensagem amarela.
+        // --- VALIDAÇÃO DE PERMISSÃO ---
         if ($this->Auth->user('role') != 'admin' && $post['Post']['user_id'] != $this->Auth->user('id')) {
-            
-            // Exibe mensagem AMARELA (Warning)
             $this->Flash->set(
                 'Você não tem permissão de excluir esse Post.',
-                array(
-                    'element' => 'default', 
-                    'params' => array('class' => 'alert alert-warning') 
-                )
+                array('element' => 'default', 'params' => array('class' => 'alert alert-warning'))
             );
-            
             return $this->redirect(array('action' => 'index'));
         }
         
         if ($this->Post->delete($id)) {
-            $this->Flash->success(__('O post com id: %s foi excluído.', h($id)));
+            $this->Flash->success(__('O post foi excluído com sucesso.'));
         } else {
              $this->Flash->error(__('O post não pôde ser excluído.'));
         }
         
-        // Limpa ID
-        $this->Post->id = null;
         return $this->redirect(array('action' => 'index'));
     }
     
     /**
      * isOwnedBy helper
-     * Auxiliar para verificar propriedade
+     * Auxiliar para verificar propriedade de forma rápida
      */
     public function isOwnedBy($post, $user) {
         return $this->Post->field('id', array('id' => $post, 'user_id' => $user)) !== false;
